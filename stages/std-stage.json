@@ -1,0 +1,8 @@
+{
+    "name": "Usual Cicle",
+    "alarm": "buzz",
+    "stages": [
+        {"name": "Break", "duration": 30},
+        {"name": "Work", "duration": 1500}
+    ]
+}
