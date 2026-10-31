@@ -22,13 +22,13 @@ const STD_CONFIG: &str = r#"{
 
 #[derive(Serialize, Deserialize)]
 pub struct TimerConfig {
-    name: String,
-    alarm: String,
-    stages: Vec<Stage>,
+    pub name: String,
+    pub alarm: String,
+    pub stages: Vec<Stage>,
 }
 impl TimerConfig {
-    fn new(file_path: &str) -> json::Result<Self> {
-        match fs::read_to_string(file_path) {
+    pub fn from_file(path: &str) -> json::Result<Self> {
+        match fs::read_to_string(path) {
             Ok(c) => json::from_str::<TimerConfig>(&c),
             Err(e) => {
                 eprintln!("ERROR: {e}");
@@ -37,16 +37,16 @@ impl TimerConfig {
         }
     }
 
-    fn from_str(json_str: &str) -> json::Result<Self> {
+    pub fn from_str(json_str: &str) -> json::Result<Self> {
         json::from_str::<TimerConfig>(json_str)
     }
 
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         json::to_string_pretty(self)
             .expect("Error: Something went wrong when parsed StagesFile to String.")
     }
 
-    fn save_to_file(&self, path: &PathBuf) -> std::io::Result<()> {
+    pub fn save_to_file(&self, path: &PathBuf) -> std::io::Result<()> {
         let contents = self.to_string();
         fs::write(path, contents)
     }
@@ -59,7 +59,7 @@ pub struct Stage {
     duration: Duration,
 }
 impl Stage {
-    fn new(name: &str, secs: u64) -> Stage {
+    pub fn new(name: &str, secs: u64) -> Stage {
         Stage {
             name: name.to_string(),
             duration: Duration::from_secs(secs),

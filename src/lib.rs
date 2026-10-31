@@ -4,7 +4,7 @@ use iced::{Center, Element, Length::Fill};
 mod audio;
 mod storage;
 
-use storage::Stage;
+use storage::{Stage, TimerConfig};
 
 pub enum Message {
     Play,
@@ -17,6 +17,7 @@ pub enum Message {
 
 pub struct Lirrel {
     cycle_name: String,
+    alarm: String,
     stages: Vec<Stage>,
     current_stage: usize,
 }
@@ -27,6 +28,7 @@ impl Lirrel {
     pub fn boot() -> Self {
         Self {
             cycle_name: String::new(),
+            alarm: String::from("beep"),
             stages: Vec::new(),
             current_stage: 0,
         }
@@ -47,8 +49,18 @@ impl Lirrel {
 impl Lirrel {
     // general functions
 
-    /// Loads a stages file, updating the `cycle_name` and the `stages`.
+    /// Loads a stages file, updating the internal configuration.
     fn load_cycle(&mut self, filename: &str) {
-        todo!()
+        let config = match TimerConfig::from_file(filename) {
+            Ok(tc) => tc,
+            Err(e) => {
+                eprintln!("Error: {e}");
+                return;
+            }
+        };
+        self.cycle_name = config.name;
+        self.stages = config.stages;
+        self.alarm = config.alarm;
+        self.current_stage = 0;
     }
 }
