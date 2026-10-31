@@ -27,9 +27,9 @@ impl Lirrel {
 
     pub fn boot() -> Self {
         Self {
-            cycle_name: String::new(),
+            cycle_name: String::from("Usual Cicle"),
             alarm: String::from("beep"),
-            stages: Vec::new(),
+            stages: vec![Stage::new("Pause", 300), Stage::new("Work", 1500)],
             current_stage: 0,
         }
     }
