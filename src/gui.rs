@@ -3,6 +3,7 @@ use iced::font::Weight;
 use iced::widget::{Container, button, column, container, row, space, text};
 use iced::{Background, Border, Color, Fill, Font, Padding};
 
+use crate::storage::Stage;
 use crate::{Message, ProgressTracker};
 
 macro_rules! simple_text {
@@ -49,13 +50,13 @@ pub const SEMIBOLD: Font = font!("Roboto SemiBold", Weight::Semibold);
 
 pub(crate) fn view_main<'a>(
     time_text: &'a str,
-    stage_name: &'a str,
+    stage: &'a Stage,
     indicator: &'a ProgressTracker,
 ) -> Container<'a, Message> {
     let header = row![
         simple_text!(indicator.show(), 16, Font::DEFAULT, MUTED),
         space::horizontal(),
-        simple_text!(stage_name, 24, BOLD, CYAN),
+        simple_text!(&stage.name, 24, BOLD, CYAN),
         space::horizontal(),
         button(text("⚙").size(20).align_y(Vertical::Center))
             .padding(0)
@@ -65,7 +66,7 @@ pub(crate) fn view_main<'a>(
                 border: Border::default(),
                 ..Default::default()
             })
-            .on_press(Message::MenuPressed),
+            .on_press(Message::ToMenu),
     ]
     .width(Fill)
     .height(24)
@@ -76,17 +77,17 @@ pub(crate) fn view_main<'a>(
         .padding(Padding::from(32));
 
     let primary_controls = row![
-        make_default_button(("⏮", CYAN), "Voltar", Message::BackPressed),
-        make_button(("▶", WHITE), "Play", PLAY, PLAY_HOVER, Message::PlayPressed),
-        make_default_button(("⏭", CYAN), "Pular", Message::SkipPressed),
+        make_default_button(("⏮", CYAN), "Voltar", Message::Back),
+        make_button(("▶", WHITE), "Play", PLAY, PLAY_HOVER, Message::Play),
+        make_default_button(("⏭", CYAN), "Pular", Message::Skip),
     ]
     .spacing(12)
     .width(Fill)
     .height(45);
 
     let secondary_controls = row![
-        make_default_button(("🔁", CYAN), "Zerar", Message::ZeroPressed),
-        make_default_button(("❌", RED), "Resetar", Message::ResetPressed),
+        make_default_button(("🔁", CYAN), "Zerar", Message::Zero),
+        make_default_button(("❌", RED), "Resetar", Message::Reset),
     ]
     .spacing(12)
     .width(Fill)

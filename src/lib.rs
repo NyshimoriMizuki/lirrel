@@ -4,16 +4,16 @@ mod storage;
 
 pub use gui::SEMIBOLD;
 use gui::{WINDOW_HEIGHT, WINDOW_WIDTH};
-use storage::{Stage, TimerConfig};
+use storage::{BLANK_STAGE, Stage, TimerConfig};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Message {
-    MenuPressed,
-    BackPressed,
-    PlayPressed,
-    SkipPressed,
-    ZeroPressed,
-    ResetPressed,
+    ToMenu,
+    Back,
+    Play,
+    Skip,
+    Zero,
+    Reset,
 }
 
 struct Clock {
@@ -57,11 +57,8 @@ impl ProgressTracker {
 
 pub struct Lirrel {
     clock: Clock,
-    alarm: String,
-    stage_name: String,
-    stages: Vec<Stage>,
+    config: TimerConfig,
     progress: ProgressTracker,
-    cycling: bool,
 }
 
 impl Lirrel {
@@ -72,16 +69,14 @@ impl Lirrel {
             clock: Clock {
                 value: String::from("12:30"),
             },
-            stage_name: String::from("Usual Cicle"),
-            alarm: String::from("beep"),
-            stages: vec![Stage::new("Pause", 300), Stage::new("Work", 1500)],
-            progress: ProgressTracker::new(2),
-            cycling: false,
+            config: TimerConfig::default(),
+            progress: ProgressTracker::new(TimerConfig::DEFAULT_STAGES_NUMBER),
         }
     }
 
     pub fn view(&self) -> iced::Element<'_, Message> {
-        gui::view_main(&self.clock.value, &self.stage_name, &self.progress).into()
+        let cur_stage = self.get_current_stage().unwrap_or(&*BLANK_STAGE);
+        gui::view_main(&self.clock.value, &cur_stage, &self.progress).into()
     }
 
     pub fn update(&mut self, msg: Message) {
@@ -108,16 +103,17 @@ impl Lirrel {
 
     /// Loads a stages file, updating the internal configuration.
     fn load_cycle(&mut self, filename: &str) {
-        let config = match TimerConfig::from_file(filename) {
+        self.config = match TimerConfig::from_file(filename) {
             Ok(tc) => tc,
             Err(e) => {
                 eprintln!("Error: {e}");
                 return;
             }
         };
-        self.stage_name = config.name;
-        self.stages = config.stages;
-        self.alarm = config.alarm;
         self.progress.reset();
+    }
+
+    fn get_current_stage(&self) -> Option<&Stage> {
+        self.config.stages.get(self.progress.current)
     }
 }

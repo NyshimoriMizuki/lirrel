@@ -3,7 +3,10 @@ use serde_json as json;
 
 use std::fs;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 use std::time::Duration;
+
+pub static BLANK_STAGE: LazyLock<Stage> = LazyLock::new(Stage::default);
 
 const STD_CONFIG: &str = r#"{
   "name": "Usual Cicle",
@@ -28,7 +31,20 @@ pub struct TimerConfig {
     pub cycling: bool,
     pub stages: Vec<Stage>,
 }
+
+impl Default for TimerConfig {
+    fn default() -> Self {
+        Self {
+            name: String::from("Usual Cycle"),
+            alarm: String::from("beep"),
+            cycling: false,
+            stages: vec![Stage::new("Pause", 300), Stage::new("Work", 1500)],
+        }
+    }
+}
 impl TimerConfig {
+    pub const DEFAULT_STAGES_NUMBER: usize = 2;
+
     pub fn from_file(path: &str) -> json::Result<Self> {
         match fs::read_to_string(path) {
             Ok(c) => json::from_str::<TimerConfig>(&c),
@@ -56,15 +72,23 @@ impl TimerConfig {
 
 #[derive(Serialize, Deserialize)]
 pub struct Stage {
-    name: String,
+    pub name: String,
     #[serde(with = "secs")]
-    duration: Duration,
+    pub duration: Duration,
 }
 impl Stage {
     pub fn new(name: &str, secs: u64) -> Stage {
         Stage {
             name: name.to_string(),
             duration: Duration::from_secs(secs),
+        }
+    }
+}
+impl Default for Stage {
+    fn default() -> Self {
+        Self {
+            name: String::from("NONE"),
+            duration: Duration::ZERO,
         }
     }
 }
