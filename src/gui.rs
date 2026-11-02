@@ -111,6 +111,21 @@ pub(crate) fn view_main<'a>(
     })
 }
 
+pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
+    let back_button = make_default_button(("◀", MUTED), "voltar", Message::ToMain);
+
+    container(column![back_button])
+        .width(Fill)
+        .height(Fill)
+        .padding(Padding::from(32))
+        .style(|_| container::Style {
+            background: Some(Background::Color(PANEL)),
+            border: Border::default().rounded(16),
+            text_color: Some(WHITE),
+            ..Default::default()
+        })
+}
+
 fn make_default_button(
     glyph: (&'static str, Color),
     label: &'static str,

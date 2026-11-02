@@ -8,12 +8,18 @@ use storage::{BLANK_STAGE, Stage, TimerConfig};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Message {
+    ToMain,
     ToMenu,
     Back,
     Play,
     Skip,
     Zero,
     Reset,
+}
+
+enum Screen {
+    Main,
+    Menu,
 }
 
 struct Clock {
@@ -59,6 +65,7 @@ pub struct Lirrel {
     clock: Clock,
     config: TimerConfig,
     progress: ProgressTracker,
+    cur_screen: Screen,
 }
 
 impl Lirrel {
@@ -71,16 +78,24 @@ impl Lirrel {
             },
             config: TimerConfig::default(),
             progress: ProgressTracker::new(TimerConfig::DEFAULT_STAGES_NUMBER),
+            cur_screen: Screen::Main,
         }
     }
 
     pub fn view(&self) -> iced::Element<'_, Message> {
+        if let Screen::Menu = self.cur_screen {
+            return gui::view_menu().into();
+        }
         let cur_stage = self.get_current_stage().unwrap_or(&*BLANK_STAGE);
         gui::view_main(&self.clock.value, &cur_stage, &self.progress).into()
     }
 
     pub fn update(&mut self, msg: Message) {
-        println!("{:?}", msg)
+        match msg {
+            Message::ToMain => self.cur_screen = Screen::Main,
+            Message::ToMenu => self.cur_screen = Screen::Menu,
+            m => println!("{:?}", m),
+        }
     }
 
     pub fn window_settings() -> iced::window::Settings {
