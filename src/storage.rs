@@ -8,6 +8,7 @@ use std::time::Duration;
 const STD_CONFIG: &str = r#"{
   "name": "Usual Cicle",
   "alarm": "buzz",
+  "cycling": true,
   "stages": [
     {
       "name": "Break",
@@ -24,6 +25,7 @@ const STD_CONFIG: &str = r#"{
 pub struct TimerConfig {
     pub name: String,
     pub alarm: String,
+    pub cycling: bool,
     pub stages: Vec<Stage>,
 }
 impl TimerConfig {
@@ -97,6 +99,7 @@ mod tests {
         let file = TimerConfig {
             name: "Usual Cicle".to_string(),
             alarm: "buzz".to_string(),
+            cycling: true,
             stages: vec![Stage::new("Break", 300), Stage::new("Work", 1500)],
         };
         assert_eq!(file.to_string(), STD_CONFIG);

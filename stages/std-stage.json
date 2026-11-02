@@ -1,6 +1,7 @@
 {
     "name": "Usual Cicle",
     "alarm": "buzz",
+    "cycling": true,
     "stages": [
         {"name": "Break", "duration": 300},
         {"name": "Work", "duration": 1500}
