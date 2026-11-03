@@ -1,7 +1,9 @@
 use iced::alignment::Vertical;
 use iced::font::Weight;
-use iced::widget::{Container, button, column, container, row, space, text};
-use iced::{Background, Border, Color, Fill, Font, Padding};
+use iced::widget::{
+    Container, button, column, container, row, rule::horizontal as horizontal_rule, space, text,
+};
+use iced::{Background, Border, Color, Font, Length, Padding};
 
 use crate::storage::Stage;
 use crate::{Message, ProgressTracker};
@@ -58,31 +60,35 @@ pub(crate) fn view_main<'a>(
         space::horizontal(),
         simple_text!(&stage.name, 24, BOLD, CYAN),
         space::horizontal(),
-        button(text("⚙").size(20).align_y(Vertical::Center))
-            .padding(0)
+        button(text("⚙️").size(20).align_y(Vertical::Center))
             .style(|_, _| button::Style {
-                background: None,
                 text_color: WHITE,
-                border: Border::default(),
                 ..Default::default()
             })
             .on_press(Message::ToMenu),
     ]
-    .width(Fill)
-    .height(24)
+    .width(Length::Fill)
+    .height(20)
     .align_y(Vertical::Center);
 
     let timer = container(simple_text!(time_text, 68, BLACK, WHITE))
-        .center_x(Fill)
+        .center_x(Length::Fill)
         .padding(Padding::from(32));
 
     let primary_controls = row![
         make_default_button(("⏮", CYAN), "Voltar", Message::Back),
-        make_button(("▶", WHITE), "Play", PLAY, PLAY_HOVER, Message::Play),
+        make_button(
+            ("▶", WHITE),
+            "Play",
+            1.,
+            (PLAY, PLAY_HOVER),
+            (Length::Fill, Length::Fixed(45.)),
+            Message::Play
+        ),
         make_default_button(("⏭", CYAN), "Pular", Message::Skip),
     ]
     .spacing(12)
-    .width(Fill)
+    .width(Length::Fill)
     .height(45);
 
     let secondary_controls = row![
@@ -90,7 +96,7 @@ pub(crate) fn view_main<'a>(
         make_default_button(("❌", RED), "Resetar", Message::Reset),
     ]
     .spacing(12)
-    .width(Fill)
+    .width(Length::Fill)
     .height(45);
 
     container(column![
@@ -100,8 +106,8 @@ pub(crate) fn view_main<'a>(
         space::vertical().height(12.),
         secondary_controls,
     ])
-    .width(Fill)
-    .height(Fill)
+    .width(Length::Fill)
+    .height(Length::Fill)
     .padding(Padding::from(32))
     .style(|_| container::Style {
         background: Some(Background::Color(PANEL)),
@@ -112,11 +118,58 @@ pub(crate) fn view_main<'a>(
 }
 
 pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
-    let back_button = make_default_button(("◀", MUTED), "voltar", Message::ToMain);
+    let header = row![
+        simple_text!("Configurações", 16, Font::DEFAULT, MUTED),
+        space::horizontal(),
+        button(text("❌").size(20).align_y(Vertical::Center))
+            .style(|_, _| button::Style {
+                text_color: WHITE,
+                ..Default::default()
+            })
+            .on_press(Message::ToMain)
+    ]
+    .width(Length::Fill)
+    .height(20)
+    .align_y(Vertical::Top);
 
-    container(column![back_button])
-        .width(Fill)
-        .height(Fill)
+    let file_line = row![
+        column![
+            make_button(
+                ("", MUTED),
+                "salvar",
+                0.75,
+                (BUTTON, BUTTON_HOVER),
+                (Length::Fixed(100.), Length::Fixed(45. / 2.)),
+                Message::SaveFile
+            ),
+            make_button(
+                ("", MUTED),
+                "salvar como",
+                0.75,
+                (BUTTON, BUTTON_HOVER),
+                (Length::Fixed(100.), Length::Fixed(45. / 2.)),
+                Message::SaveFileAs
+            ),
+        ],
+        space::horizontal(),
+        simple_text!("arquivo aberto", 32, SEMIBOLD, WHITE),
+        space::horizontal(),
+        make_button(
+            ("", MUTED),
+            "abrir",
+            1.,
+            (BUTTON, BUTTON_HOVER),
+            (Length::Fixed(100.), Length::Fixed(45.)),
+            Message::OpenFile
+        ),
+    ]
+    .spacing(8)
+    .padding(Padding::from([8, 0]))
+    .width(Length::Fill);
+
+    container(column![header, file_line, horizontal_rule(2)])
+        .width(Length::Fill)
+        .height(Length::Fill)
         .padding(Padding::from(32))
         .style(|_| container::Style {
             background: Some(Background::Color(PANEL)),
@@ -131,34 +184,42 @@ fn make_default_button(
     label: &'static str,
     message: Message,
 ) -> button::Button<'static, Message> {
-    make_button(glyph, label, BUTTON, BUTTON_HOVER, message)
+    make_button(
+        glyph,
+        label,
+        1.,
+        (BUTTON, BUTTON_HOVER),
+        (Length::Fill, Length::Fixed(45.)),
+        message,
+    )
 }
 
 fn make_button(
     glyph: (&'static str, Color),
     label: &'static str,
-    background: Color,
-    hover_background: Color,
+    font_scale: f32,
+    bg_colors: (Color, Color),
+    size: (Length, Length),
     message: Message,
 ) -> button::Button<'static, Message> {
     button(
         container(
             row![
-                simple_text!(glyph.0, 18, SEMIBOLD, glyph.1),
-                simple_text!(label, 16, SEMIBOLD, WHITE)
+                simple_text!(glyph.0, 18. * font_scale, SEMIBOLD, glyph.1),
+                simple_text!(label, 16. * font_scale, SEMIBOLD, WHITE)
             ]
             .spacing(7),
         )
-        .center_x(Fill)
+        .center_x(Length::Fill)
         .align_y(Vertical::Center),
     )
-    .width(Fill)
-    .height(45)
+    .width(size.0)
+    .height(size.1)
     .style(move |_, status| {
         let color = if matches!(status, button::Status::Hovered) {
-            hover_background
+            bg_colors.0
         } else {
-            background
+            bg_colors.1
         };
 
         button::Style {

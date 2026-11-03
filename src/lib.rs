@@ -15,6 +15,9 @@ pub enum Message {
     Skip,
     Zero,
     Reset,
+    OpenFile,
+    SaveFile,
+    SaveFileAs,
 }
 
 enum Screen {
