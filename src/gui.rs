@@ -66,12 +66,9 @@ pub(crate) fn view_main<'a>(
         space::horizontal(),
         simple_text!(&stage.name, 24, BOLD, CYAN),
         space::horizontal(),
-        button(text("⚙️").size(20).align_y(Vertical::Center))
-            .style(|_, _| button::Style {
-                text_color: WHITE,
-                ..Default::default()
-            })
-            .on_press(Message::ToMenu),
+        UIButton::new(Message::ToMenu)
+            .glyph_sized("⚙️", WHITE, 20)
+            .create(),
     ]
     .width(Length::Fill)
     .height(20)
@@ -83,14 +80,11 @@ pub(crate) fn view_main<'a>(
 
     let primary_controls = row![
         make_default_button(("⏮", CYAN), "Voltar", Message::Back),
-        make_button(
-            ("▶", WHITE),
-            "Play",
-            1.,
-            (PLAY, PLAY_HOVER),
-            (Length::Fill, Length::Fixed(45.)),
-            Message::Play
-        ),
+        UIButton::new(Message::Play)
+            .glyph("▶", WHITE)
+            .text("Play")
+            .base(PLAY, PLAY_HOVER, 8.into())
+            .create(),
         make_default_button(("⏭", CYAN), "Pular", Message::Skip),
     ]
     .spacing(12)
@@ -125,14 +119,14 @@ pub(crate) fn view_main<'a>(
 
 pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
     let header = row![
-        simple_text!("Configurações", 16, Font::DEFAULT, MUTED),
+        UIText::new("Configurações", 16)
+            .font(Font::DEFAULT)
+            .color(MUTED)
+            .create(),
         space::horizontal(),
-        button(text("❌").size(20).align_y(Vertical::Center))
-            .style(|_, _| button::Style {
-                text_color: WHITE,
-                ..Default::default()
-            })
-            .on_press(Message::ToMain)
+        UIButton::new(Message::ToMain)
+            .glyph_sized("❌", WHITE, 20)
+            .create(),
     ]
     .width(Length::Fill)
     .height(20)
@@ -140,34 +134,23 @@ pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
 
     let file_line = row![
         column![
-            make_button(
-                ("", MUTED),
-                "salvar",
-                0.75,
-                (BUTTON, BUTTON_HOVER),
-                (Length::Fixed(100.), Length::Fixed(45. / 2.)),
-                Message::SaveFile
-            ),
-            make_button(
-                ("", MUTED),
-                "salvar como",
-                0.75,
-                (BUTTON, BUTTON_HOVER),
-                (Length::Fixed(100.), Length::Fixed(45. / 2.)),
-                Message::SaveFileAs
-            ),
-        ],
+            UIButton::new(Message::SaveFile)
+                .text_sized("salvar", 12)
+                .size(Size2D::new(100., 45. / 2.))
+                .create(),
+            UIButton::new(Message::SaveFileAs)
+                .text_sized("salvar como", 12)
+                .size(Size2D::new(100., 45. / 2.))
+                .create(),
+        ]
+        .spacing(1),
         space::horizontal(),
-        simple_text!("arquivo aberto", 32, SEMIBOLD, WHITE),
+        UIText::new("arquivo aberto", 32).create(),
         space::horizontal(),
-        make_button(
-            ("", MUTED),
-            "abrir",
-            1.,
-            (BUTTON, BUTTON_HOVER),
-            (Length::Fixed(100.), Length::Fixed(45.)),
-            Message::OpenFile
-        ),
+        UIButton::new(Message::SaveFileAs)
+            .text("abrir")
+            .size(Size2D::new(100., 45.))
+            .create(),
     ]
     .spacing(8)
     .padding(Padding::from([8, 0]))
@@ -193,25 +176,6 @@ fn make_default_button(
     UIButton::new(message)
         .glyph(glyph.0, glyph.1)
         .text(label)
-        .create()
-}
-
-fn make_button(
-    glyph: (&'static str, Color),
-    label: &'static str,
-    font_scale: f32,
-    bg_colors: (Color, Color),
-    size: (Length, Length),
-    message: Message,
-) -> button::Button<'static, Message> {
-    UIButton::new(message)
-        .glyph_sized(glyph.0, glyph.1, (16. * font_scale) as u32)
-        .text_sized(label, (16. * font_scale) as u32)
-        .size(Size2D {
-            width: size.0,
-            height: size.1,
-        })
-        .base(bg_colors.0, bg_colors.1, 8.into())
         .create()
 }
 
