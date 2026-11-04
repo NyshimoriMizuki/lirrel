@@ -1,9 +1,12 @@
 use iced::alignment::Vertical;
 use iced::font::Weight;
 use iced::widget::{
-    Container, button, column, container, row, rule::horizontal as horizontal_rule, space, text,
+    Container, Text, button, column, container, rich_text, row,
+    rule::horizontal as horizontal_rule, space, span, text,
 };
 use iced::{Background, Border, Color, Font, Length, Padding};
+
+use std::sync::LazyLock;
 
 use crate::storage::Stage;
 use crate::{Message, ProgressTracker};
@@ -23,6 +26,7 @@ macro_rules! const_hexcolor {
         );
     };
 }
+
 macro_rules! font {
     ($font:expr, $weight:expr) => {
         Font {
@@ -49,6 +53,8 @@ pub const WINDOW_HEIGHT: f32 = 350.0;
 const BLACK: Font = font!("Roboto Black", Weight::Black);
 const BOLD: Font = font!("Roboto Bold", Weight::Bold);
 pub const SEMIBOLD: Font = font!("Roboto SemiBold", Weight::Semibold);
+
+pub static BLANK_TEXT: LazyLock<UIText> = LazyLock::new(UIText::default);
 
 pub(crate) fn view_main<'a>(
     time_text: &'a str,
@@ -184,14 +190,10 @@ fn make_default_button(
     label: &'static str,
     message: Message,
 ) -> button::Button<'static, Message> {
-    make_button(
-        glyph,
-        label,
-        1.,
-        (BUTTON, BUTTON_HOVER),
-        (Length::Fill, Length::Fixed(45.)),
-        message,
-    )
+    UIButton::new(message)
+        .glyph(glyph.0, glyph.1)
+        .text(label)
+        .create()
 }
 
 fn make_button(
@@ -202,39 +204,228 @@ fn make_button(
     size: (Length, Length),
     message: Message,
 ) -> button::Button<'static, Message> {
-    button(
-        container(
-            row![
-                simple_text!(glyph.0, 18. * font_scale, SEMIBOLD, glyph.1),
-                simple_text!(label, 16. * font_scale, SEMIBOLD, WHITE)
-            ]
-            .spacing(7),
-        )
-        .center_x(Length::Fill)
-        .align_y(Vertical::Center),
-    )
-    .width(size.0)
-    .height(size.1)
-    .style(move |_, status| {
-        let color = if matches!(status, button::Status::Hovered) {
-            bg_colors.0
-        } else {
-            bg_colors.1
-        };
-
-        button::Style {
-            background: Some(Background::Color(color)),
-            text_color: WHITE,
-            border: Border {
-                radius: 8.0.into(),
-                ..Border::default()
-            },
-            ..Default::default()
-        }
-    })
-    .on_press(message)
+    UIButton::new(message)
+        .glyph_sized(glyph.0, glyph.1, (16. * font_scale) as u32)
+        .text_sized(label, (16. * font_scale) as u32)
+        .size(Size2D {
+            width: size.0,
+            height: size.1,
+        })
+        .base(bg_colors.0, bg_colors.1, 8.into())
+        .create()
 }
 
 pub fn theme() -> iced::theme::Theme {
     iced::theme::Theme::Dark
+}
+
+#[derive(Clone, Copy)]
+struct UIButton<'a> {
+    glyph: Option<UIText<'a>>,
+    text: Option<UIText<'a>>,
+    base: ButtonBase,
+    action: Message,
+    size: Size2D,
+}
+impl<'a> UIButton<'a> {
+    fn new(action: Message) -> Self {
+        let size = Size2D::new(0., 45.).fill_x();
+        Self {
+            glyph: None,
+            text: None,
+            base: ButtonBase::new(BUTTON, BUTTON_HOVER, 8.0.into()),
+            action,
+            size,
+        }
+    }
+
+    fn glyph(mut self, content: &'a str, color: Color) -> Self {
+        self.glyph = Some(UIText::new(content, 16).color(color));
+        self
+    }
+
+    fn glyph_sized(mut self, content: &'a str, color: Color, size: u32) -> Self {
+        self.glyph = Some(UIText::new(content, size).color(color));
+        self
+    }
+
+    fn text(mut self, content: &'a str) -> Self {
+        self.text = Some(UIText::new(content, 16));
+        self
+    }
+
+    fn text_sized(mut self, content: &'a str, size: u32) -> Self {
+        self.text = Some(UIText::new(content, size));
+        self
+    }
+
+    fn transparent(mut self) -> Self {
+        self.base = ButtonBase::transparent();
+        self
+    }
+
+    fn base(mut self, active: Color, hovered: Color, radius: iced::border::Radius) -> Self {
+        self.base = ButtonBase::new(active, hovered, radius);
+        self
+    }
+
+    fn size(mut self, size: Size2D) -> Self {
+        self.size = size;
+        self
+    }
+
+    fn render_content(self) -> Container<'a, Message> {
+        match (&self.glyph, &self.text) {
+            (None, None) => container(BLANK_TEXT.create()),
+            (Some(e), None) | (None, Some(e)) => container(e.create()),
+            (Some(g), Some(t)) => {
+                container(rich_text![g.create_span(), span(" "), t.create_span()])
+                    .center_x(Length::Fill)
+                    .align_y(Vertical::Center)
+            }
+        }
+    }
+
+    /// Finishes the construction and builds it.
+    /// > Warning: this consumes the `Button`
+    fn create(self) -> button::Button<'a, Message> {
+        let content = self.render_content();
+
+        button(content)
+            .width(self.size.width)
+            .height(self.size.height)
+            .style(move |_, status| button::Style {
+                text_color: WHITE,
+                background: self.base.create(status),
+                border: self.base.border,
+                ..Default::default()
+            })
+            .on_press(self.action)
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct UIText<'a> {
+    content: &'a str,
+    color: Color,
+    size: u32,
+    font: Font,
+}
+
+impl<'a> Default for UIText<'a> {
+    fn default() -> Self {
+        Self {
+            content: "",
+            color: WHITE,
+            size: 16,
+            font: SEMIBOLD,
+        }
+    }
+}
+
+impl<'a> UIText<'a> {
+    /// default c configuration is `color: WHITE` and `font: SEMIBOLD`
+    pub(crate) fn new(content: &'a str, size: u32) -> Self {
+        Self {
+            size,
+            content,
+            color: WHITE,
+            font: SEMIBOLD,
+        }
+    }
+
+    pub(crate) fn color(mut self, color: Color) -> Self {
+        self.color = color;
+        self
+    }
+
+    pub(crate) fn font(mut self, font: Font) -> Self {
+        self.font = font;
+        self
+    }
+
+    /// Finishes the construction and builds it.
+    /// > Warning: this consumes the `UIText`
+    pub(crate) fn create(self) -> Text<'a> {
+        text(self.content)
+            .size(self.size)
+            // .line_height(iced::Pixels(self.size as f32))
+            .font(self.font)
+            .color(self.color)
+    }
+    /// Finishes the construction and builds it.
+    /// > Warning: this consumes the `UIText`
+    pub(crate) fn create_span(self) -> text::Span<'a> {
+        span(self.content)
+            .size(self.size)
+            // .line_height(iced::Pixels(self.size as f32))
+            .font(self.font)
+            .color(self.color)
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ButtonBase {
+    is_none: bool,
+    active: Color,
+    hovered: Color,
+    border: Border,
+}
+impl ButtonBase {
+    fn transparent() -> Self {
+        ButtonBase {
+            is_none: true,
+            active: Color::TRANSPARENT,
+            hovered: Color::TRANSPARENT,
+            border: Border::default(),
+        }
+    }
+
+    fn new(active: Color, hovered: Color, radius: iced::border::Radius) -> Self {
+        let border = Border::default().rounded(radius);
+        Self {
+            is_none: false,
+            active,
+            hovered,
+            border,
+        }
+    }
+
+    fn gen_state_color(&self, status: button::Status) -> Color {
+        if matches!(status, button::Status::Hovered) {
+            self.hovered
+        } else {
+            self.active
+        }
+    }
+
+    fn create(&self, status: button::Status) -> Option<Background> {
+        if self.is_none {
+            return None;
+        }
+        Some(Background::Color(self.gen_state_color(status)))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Size2D {
+    width: Length,
+    height: Length,
+}
+impl Size2D {
+    fn new(x: f32, y: f32) -> Self {
+        Size2D {
+            width: Length::Fixed(x),
+            height: Length::Fixed(y),
+        }
+    }
+
+    fn fill_x(mut self) -> Self {
+        self.width = Length::Fill;
+        self
+    }
+    fn fill_y(mut self) -> Self {
+        self.height = Length::Fill;
+        self
+    }
 }
