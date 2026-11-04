@@ -74,7 +74,7 @@ pub(crate) fn view_main<'a>(
             .glyph_sized("⚙️", WHITE, ICON_SIZE)
             .create(),
     ]
-    // .height(20)
+    .height(20)
     .width(Length::Fill)
     .align_y(Vertical::Center);
 
@@ -133,7 +133,7 @@ pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
             .create(),
     ]
     .width(Length::Fill)
-    // .height(20)
+    .height(20)
     .align_y(Vertical::Top);
 
     let file_line = row![
@@ -260,10 +260,10 @@ impl<'a> UIButton<'a> {
             (Some(e), None) | (None, Some(e)) => container(e.create()),
             (Some(g), Some(t)) => {
                 container(rich_text![g.create_span(), span(" "), t.create_span()])
-                    .center_x(Length::Fill)
-                    .align_y(Vertical::Center)
             }
         }
+        .center_x(Length::Fill)
+        .align_y(Vertical::Center)
     }
 
     /// Finishes the construction and builds it.
@@ -339,7 +339,7 @@ impl<'a> UIText<'a> {
     pub(crate) fn create(self) -> Text<'a> {
         text(self.content)
             .size(self.size)
-            // .line_height(iced::Pixels(self.size as f32))
+            .line_height(iced::Pixels(self.size as f32))
             .font(self.font)
             .color(self.color)
     }
@@ -348,7 +348,7 @@ impl<'a> UIText<'a> {
     pub(crate) fn create_span(self) -> text::Span<'a> {
         span(self.content)
             .size(self.size)
-            // .line_height(iced::Pixels(self.size as f32))
+            .line_height(iced::Pixels(self.size as f32))
             .font(self.font)
             .color(self.color)
     }
