@@ -228,6 +228,18 @@ struct UIButton<'a> {
     size: Size2D,
 }
 impl<'a> UIButton<'a> {
+    /// Starts the building of a button.
+    ///
+    /// ```
+    /// // Default configuration
+    /// UIButton {
+    ///     action, //obligatory parameter
+    ///     glyph: None,
+    ///     text: None,
+    ///     base: ButtonBase::new(BUTTON, BUTTON_HOVER, 8.0.into()),
+    ///     size: Size2D { width: Fill, height: 45.0 },
+    /// }
+    /// ```
     fn new(action: Message) -> Self {
         let size = Size2D::new(0., 45.).fill_x();
         Self {
@@ -324,7 +336,17 @@ impl<'a> Default for UIText<'a> {
 }
 
 impl<'a> UIText<'a> {
-    /// default c configuration is `color: WHITE` and `font: SEMIBOLD`
+    /// Starts the building of a text.
+    ///
+    /// ```
+    /// // Default configuration
+    /// UIText {
+    ///     size, // obligatory parameter
+    ///     content, // obligatory parameter
+    ///     color: WHITE,
+    ///     font: SEMIBOLD,
+    /// }
+    /// ```
     pub(crate) fn new(content: &'a str, size: u32) -> Self {
         Self {
             size,
