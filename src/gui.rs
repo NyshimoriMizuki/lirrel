@@ -54,6 +54,10 @@ const BLACK: Font = font!("Roboto Black", Weight::Black);
 const BOLD: Font = font!("Roboto Bold", Weight::Bold);
 pub const SEMIBOLD: Font = font!("Roboto SemiBold", Weight::Semibold);
 
+const CHAR_SIZE: u32 = 16;
+const SMALL_CHAR_SIZE: u32 = CHAR_SIZE * 3 / 4;
+const ICON_SIZE: u32 = CHAR_SIZE * 4 / 3;
+
 pub static BLANK_TEXT: LazyLock<UIText> = LazyLock::new(UIText::default);
 
 pub(crate) fn view_main<'a>(
@@ -62,21 +66,21 @@ pub(crate) fn view_main<'a>(
     indicator: &'a ProgressTracker,
 ) -> Container<'a, Message> {
     let header = row![
-        simple_text!(indicator.show(), 16, Font::DEFAULT, MUTED),
+        simple_text!(indicator.show(), CHAR_SIZE, Font::DEFAULT, MUTED),
         space::horizontal(),
-        simple_text!(&stage.name, 24, BOLD, CYAN),
+        simple_text!(&stage.name, CHAR_SIZE * 3 / 2, BOLD, CYAN),
         space::horizontal(),
         UIButton::new(Message::ToMenu)
-            .glyph_sized("⚙️", WHITE, 20)
+            .glyph_sized("⚙️", WHITE, ICON_SIZE)
             .create(),
     ]
+    // .height(20)
     .width(Length::Fill)
-    .height(20)
     .align_y(Vertical::Center);
 
-    let timer = container(simple_text!(time_text, 68, BLACK, WHITE))
+    let timer = container(simple_text!(time_text, CHAR_SIZE * 4, BLACK, WHITE))
         .center_x(Length::Fill)
-        .padding(Padding::from(32));
+        .padding(Padding::from((CHAR_SIZE * 2) as f32));
 
     let primary_controls = row![
         make_default_button(("⏮", CYAN), "Voltar", Message::Back),
@@ -103,7 +107,7 @@ pub(crate) fn view_main<'a>(
         header, //
         timer,
         primary_controls,
-        space::vertical().height(12.),
+        space::vertical().height(SMALL_CHAR_SIZE as f32),
         secondary_controls,
     ])
     .width(Length::Fill)
@@ -111,7 +115,7 @@ pub(crate) fn view_main<'a>(
     .padding(Padding::from(32))
     .style(|_| container::Style {
         background: Some(Background::Color(PANEL)),
-        border: Border::default().rounded(16),
+        border: Border::default().rounded(8),
         text_color: Some(WHITE),
         ..Default::default()
     })
@@ -119,33 +123,33 @@ pub(crate) fn view_main<'a>(
 
 pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
     let header = row![
-        UIText::new("Configurações", 16)
+        UIText::new("Configurações", CHAR_SIZE)
             .font(Font::DEFAULT)
             .color(MUTED)
             .create(),
         space::horizontal(),
         UIButton::new(Message::ToMain)
-            .glyph_sized("❌", WHITE, 20)
+            .glyph_sized("❌", WHITE, ICON_SIZE)
             .create(),
     ]
     .width(Length::Fill)
-    .height(20)
+    // .height(20)
     .align_y(Vertical::Top);
 
     let file_line = row![
         column![
             UIButton::new(Message::SaveFile)
-                .text_sized("salvar", 12)
+                .text_sized("salvar", SMALL_CHAR_SIZE)
                 .size(Size2D::new(100., 45. / 2.))
                 .create(),
             UIButton::new(Message::SaveFileAs)
-                .text_sized("salvar como", 12)
+                .text_sized("salvar como", SMALL_CHAR_SIZE)
                 .size(Size2D::new(100., 45. / 2.))
                 .create(),
         ]
         .spacing(1),
         space::horizontal(),
-        UIText::new("arquivo aberto", 32).create(),
+        UIText::new("arquivo aberto", CHAR_SIZE * 2).create(),
         space::horizontal(),
         UIButton::new(Message::SaveFileAs)
             .text("abrir")
@@ -159,7 +163,7 @@ pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
     container(column![header, file_line, horizontal_rule(2)])
         .width(Length::Fill)
         .height(Length::Fill)
-        .padding(Padding::from(32))
+        .padding(Padding::from((CHAR_SIZE * 2) as f32))
         .style(|_| container::Style {
             background: Some(Background::Color(PANEL)),
             border: Border::default().rounded(16),
@@ -216,7 +220,7 @@ impl<'a> UIButton<'a> {
     }
 
     fn glyph(mut self, content: &'a str, color: Color) -> Self {
-        self.glyph = Some(UIText::new(content, 16).color(color));
+        self.glyph = Some(UIText::new(content, CHAR_SIZE).color(color));
         self
     }
 
@@ -226,7 +230,7 @@ impl<'a> UIButton<'a> {
     }
 
     fn text(mut self, content: &'a str) -> Self {
-        self.text = Some(UIText::new(content, 16));
+        self.text = Some(UIText::new(content, CHAR_SIZE));
         self
     }
 
@@ -293,7 +297,7 @@ impl<'a> Default for UIText<'a> {
         Self {
             content: "",
             color: WHITE,
-            size: 16,
+            size: CHAR_SIZE,
             font: SEMIBOLD,
         }
     }
