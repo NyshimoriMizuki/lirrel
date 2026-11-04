@@ -58,6 +58,8 @@ const CHAR_SIZE: u32 = 16;
 const SMALL_CHAR_SIZE: u32 = CHAR_SIZE * 3 / 4;
 const ICON_SIZE: u32 = CHAR_SIZE * 4 / 3;
 
+const BUTTON_HEIGHT: f32 = 45.;
+
 pub static BLANK_TEXT: LazyLock<UIText> = LazyLock::new(UIText::default);
 
 pub(crate) fn view_main<'a>(
@@ -72,6 +74,8 @@ pub(crate) fn view_main<'a>(
         space::horizontal(),
         UIButton::new(Message::ToMenu)
             .glyph_sized("⚙️", WHITE, ICON_SIZE)
+            .transparent()
+            .size(Size2D::new((CHAR_SIZE * 2) as f32, BUTTON_HEIGHT))
             .create(),
     ]
     .height(20)
@@ -130,6 +134,8 @@ pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
         space::horizontal(),
         UIButton::new(Message::ToMain)
             .glyph_sized("❌", WHITE, ICON_SIZE)
+            .transparent()
+            .size(Size2D::new((CHAR_SIZE * 2) as f32, BUTTON_HEIGHT))
             .create(),
     ]
     .width(Length::Fill)
@@ -140,11 +146,11 @@ pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
         column![
             UIButton::new(Message::SaveFile)
                 .text_sized("salvar", SMALL_CHAR_SIZE)
-                .size(Size2D::new(100., 45. / 2.))
+                .size(Size2D::new(100., BUTTON_HEIGHT / 2.))
                 .create(),
             UIButton::new(Message::SaveFileAs)
                 .text_sized("salvar como", SMALL_CHAR_SIZE)
-                .size(Size2D::new(100., 45. / 2.))
+                .size(Size2D::new(100., BUTTON_HEIGHT / 2.))
                 .create(),
         ]
         .spacing(1),
@@ -153,7 +159,7 @@ pub(crate) fn view_menu<'a>() -> Container<'a, Message> {
         space::horizontal(),
         UIButton::new(Message::SaveFileAs)
             .text("abrir")
-            .size(Size2D::new(100., 45.))
+            .size(Size2D::new(100., BUTTON_HEIGHT))
             .create(),
     ]
     .spacing(8)
@@ -209,7 +215,7 @@ impl<'a> UIButton<'a> {
     /// }
     /// ```
     fn new(action: Message) -> Self {
-        let size = Size2D::new(0., 45.).fill_x();
+        let size = Size2D::new(0., BUTTON_HEIGHT).fill_x();
         Self {
             glyph: None,
             text: None,
