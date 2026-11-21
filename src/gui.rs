@@ -193,7 +193,7 @@ pub fn theme() -> iced::theme::Theme {
     iced::theme::Theme::Dark
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct UIButton<'a> {
     glyph: Option<UIText<'a>>,
     text: Option<UIText<'a>>,
@@ -260,8 +260,8 @@ impl<'a> UIButton<'a> {
         self
     }
 
-    fn render_content(self) -> Container<'a, Message> {
-        match (&self.glyph, &self.text) {
+    fn render_content(&self) -> Container<'a, Message> {
+        match (self.glyph, self.text) {
             (None, None) => container(BLANK_TEXT.create()),
             (Some(e), None) | (None, Some(e)) => container(e.create()),
             (Some(g), Some(t)) => {

@@ -7,5 +7,7 @@ fn main() -> iced::Result {
         .default_font(lirrel::SEMIBOLD)
         .window(Lirrel::window_settings())
         .theme(Lirrel::theme())
+        .exit_on_close_request(false)
+        .subscription(Lirrel::subscription)
         .run()
 }

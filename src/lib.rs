@@ -2,11 +2,16 @@ mod audio;
 mod gui;
 mod storage;
 
+use std::borrow::Cow;
+
+use iced::{Task, window};
+use rfd::{AsyncMessageDialog, MessageDialogResult};
+
 pub use gui::SEMIBOLD;
 use gui::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use storage::{BLANK_STAGE, Stage, TimerConfig};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Message {
     ToMain,
     ToMenu,
@@ -18,6 +23,8 @@ pub enum Message {
     OpenFile,
     SaveFile,
     SaveFileAs,
+    CloseRequest(window::Id),
+    CloseRequestResponse(window::Id, MessageDialogResult),
 }
 
 enum Screen {
@@ -69,6 +76,8 @@ pub struct Lirrel {
     config: TimerConfig,
     progress: ProgressTracker,
     cur_screen: Screen,
+
+    confirm_before_closing: bool,
 }
 
 impl Lirrel {
@@ -82,6 +91,8 @@ impl Lirrel {
             config: TimerConfig::default(),
             progress: ProgressTracker::new(TimerConfig::DEFAULT_STAGES_NUMBER),
             cur_screen: Screen::Main,
+
+            confirm_before_closing: true,
         }
     }
 
@@ -93,12 +104,35 @@ impl Lirrel {
         gui::view_main(&self.clock.value, &cur_stage, &self.progress).into()
     }
 
-    pub fn update(&mut self, msg: Message) {
+    pub fn update(&mut self, msg: Message) -> Task<Message> {
         match msg {
             Message::ToMain => self.cur_screen = Screen::Main,
             Message::ToMenu => self.cur_screen = Screen::Menu,
+            Message::CloseRequest(id) => {
+                if !self.confirm_before_closing {
+                    return window::close(id);
+                }
+
+                let dialog = rfd::AsyncMessageDialog::new()
+                    .set_title("Quer sair agora?")
+                    .set_description("Seu timer ainda está rodando!\n\nDeseja realmente sair?")
+                    .set_level(rfd::MessageLevel::Warning)
+                    .set_buttons(rfd::MessageButtons::YesNo)
+                    .show();
+                return Task::perform(dialog, move |result| {
+                    Message::CloseRequestResponse(id, result)
+                });
+            }
+            Message::CloseRequestResponse(id, result) => match result {
+                MessageDialogResult::Yes | MessageDialogResult::Ok => {
+                    return window::close(id);
+                }
+                _ => return Task::none(),
+            },
             m => println!("{:?}", m),
-        }
+        };
+
+        Task::none()
     }
 
     pub fn window_settings() -> iced::window::Settings {
@@ -113,6 +147,10 @@ impl Lirrel {
 
     pub fn theme() -> iced::Theme {
         gui::theme()
+    }
+
+    pub fn subscription(&self) -> iced::Subscription<Message> {
+        iced::Subscription::batch([window::close_requests().map(|id| Message::CloseRequest(id))])
     }
 }
 
