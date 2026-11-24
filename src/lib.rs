@@ -99,11 +99,19 @@ impl ProgressTracker {
         self.current = 0;
     }
 
-    fn update(&mut self) {
-        self.current = if self.current >= self.total {
-            1
-        } else {
+    fn proceed(&mut self) {
+        self.current = if self.current + 1 < self.total {
             self.current + 1
+        } else {
+            0
+        }
+    }
+
+    fn regress(&mut self) {
+        self.current = if self.current == 0 {
+            self.total - 1
+        } else {
+            self.current - 1
         }
     }
 
@@ -185,12 +193,12 @@ impl Lirrel {
             Message::Tick(now) => {
                 let status = self.clock.update(now);
                 if status == TimerStatus::Completed {
-                    println!("completed");
+                    self.load_next_stage();
                 }
             }
             Message::Reset => todo!(),
-            Message::Back => todo!(),
-            Message::Skip => todo!(),
+            Message::Back => self.load_previus_stage(),
+            Message::Skip => self.load_next_stage(),
             Message::Zero => todo!(),
             Message::OpenFile => todo!(),
             Message::SaveFile => todo!(),
@@ -237,6 +245,7 @@ impl Lirrel {
                 return;
             }
         };
+        self.progress.update_total(self.config.stages.len());
         self.progress.reset();
     }
 
@@ -245,5 +254,15 @@ impl Lirrel {
             .stages
             .get(self.progress.current)
             .unwrap_or(&*BLANK_STAGE)
+    }
+
+    fn load_next_stage(&mut self) {
+        self.progress.proceed();
+        self.clock = Clock::new(self.get_current_stage().duration);
+    }
+
+    fn load_previus_stage(&mut self) {
+        self.progress.regress();
+        self.clock = Clock::new(self.get_current_stage().duration);
     }
 }
