@@ -4,8 +4,7 @@ mod storage;
 
 use iced::time::{self, Duration, Instant};
 use iced::{Subscription, Task, window};
-use rfd::{AsyncMessageDialog, MessageDialogResult};
-use std::borrow::Cow;
+use rfd::MessageDialogResult;
 
 pub use gui::SEMIBOLD;
 use gui::{WINDOW_HEIGHT, WINDOW_WIDTH};
