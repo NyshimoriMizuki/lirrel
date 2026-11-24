@@ -7,6 +7,7 @@ use iced::widget::{
 use iced::{Background, Border, Color, Font, Length, Padding};
 
 use std::sync::LazyLock;
+use std::time::Duration;
 
 use crate::storage::Stage;
 use crate::{Message, ProgressTracker};
@@ -63,7 +64,7 @@ const BUTTON_HEIGHT: f32 = 45.;
 pub static BLANK_TEXT: LazyLock<UIText> = LazyLock::new(UIText::default);
 
 pub(crate) fn view_main<'a>(
-    time_text: &'a str,
+    time_text: &'a Duration,
     stage: &'a Stage,
     indicator: &'a ProgressTracker,
 ) -> Container<'a, Message> {
@@ -82,13 +83,18 @@ pub(crate) fn view_main<'a>(
     .width(Length::Fill)
     .align_y(Vertical::Center);
 
-    let timer = container(simple_text!(time_text, CHAR_SIZE * 4, BLACK, WHITE))
-        .center_x(Length::Fill)
-        .padding(Padding::from((CHAR_SIZE * 2) as f32));
+    let timer = container(simple_text!(
+        format_duration(time_text),
+        CHAR_SIZE * 4,
+        BLACK,
+        WHITE
+    ))
+    .center_x(Length::Fill)
+    .padding(Padding::from((CHAR_SIZE * 2) as f32));
 
     let primary_controls = row![
         make_default_button(("⏮", CYAN), "Voltar", Message::Back),
-        UIButton::new(Message::Play)
+        UIButton::new(Message::ToggleTimer)
             .glyph("▶", WHITE)
             .text("Play")
             .base(PLAY, PLAY_HOVER, 8.into())
@@ -423,5 +429,21 @@ impl Size2D {
     fn fill_y(mut self) -> Self {
         self.height = Length::Fill;
         self
+    }
+}
+
+fn format_duration(duration: &Duration) -> String {
+    let total_seconds = duration.as_secs();
+
+    let minutes = total_seconds / 60;
+    let seconds = total_seconds % 60;
+
+    if total_seconds >= 3600 {
+        let hours = minutes / 60;
+        let minutes = minutes % 60;
+        format!("{hours:02}:{minutes:02}:{seconds:02}")
+    } else {
+        let tenths = duration.subsec_millis() / 100;
+        format!("{minutes:02}:{seconds:02}.{tenths}")
     }
 }

@@ -2,10 +2,10 @@ mod audio;
 mod gui;
 mod storage;
 
-use std::borrow::Cow;
-
-use iced::{Task, window};
+use iced::time::{self, Duration, Instant};
+use iced::{Subscription, Task, window};
 use rfd::{AsyncMessageDialog, MessageDialogResult};
+use std::borrow::Cow;
 
 pub use gui::SEMIBOLD;
 use gui::{WINDOW_HEIGHT, WINDOW_WIDTH};
@@ -16,13 +16,14 @@ pub enum Message {
     ToMain,
     ToMenu,
     Back,
-    Play,
+    ToggleTimer,
     Skip,
     Zero,
     Reset,
     OpenFile,
     SaveFile,
     SaveFileAs,
+    Tick(Instant),
     CloseRequest(window::Id),
     CloseRequestResponse(window::Id, MessageDialogResult),
 }
@@ -32,9 +33,53 @@ enum Screen {
     Menu,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum TimerStatus {
+    Stopped,
+    Completed,
+    InProgress,
+}
+#[derive(Debug, Default)]
 struct Clock {
-    // this is temporary
-    value: String,
+    remaning: Duration,
+    deadline: Option<Instant>,
+}
+impl Clock {
+    fn new(duration: Duration) -> Self {
+        Self {
+            remaning: duration,
+            deadline: None,
+        }
+    }
+
+    fn is_running(&self) -> bool {
+        self.deadline.is_some()
+    }
+
+    fn run(&mut self) {
+        self.deadline = Some(Instant::now() + self.remaning)
+    }
+
+    fn pause(&mut self) {
+        self.remaning = self
+            .deadline
+            .take()
+            .map(|dl| dl.saturating_duration_since(Instant::now()))
+            .unwrap_or(self.remaning);
+    }
+
+    fn update(&mut self, now: Instant) -> TimerStatus {
+        let Some(deadline) = self.deadline else {
+            return TimerStatus::Stopped;
+        };
+        self.remaning = deadline.saturating_duration_since(now);
+        if self.remaning.is_zero() {
+            self.deadline = None;
+            return TimerStatus::Completed;
+        }
+
+        TimerStatus::InProgress
+    }
 }
 
 #[derive(Default, Clone)]
@@ -84,15 +129,14 @@ impl Lirrel {
     // iced functions
 
     pub fn boot() -> Self {
+        let config = TimerConfig::default();
         Self {
-            clock: Clock {
-                value: String::from("12:30"),
-            },
-            config: TimerConfig::default(),
+            clock: Clock::new(config.stages.get(0).unwrap().duration),
+            config,
             progress: ProgressTracker::new(TimerConfig::DEFAULT_STAGES_NUMBER),
             cur_screen: Screen::Main,
 
-            confirm_before_closing: true,
+            confirm_before_closing: false,
         }
     }
 
@@ -100,8 +144,8 @@ impl Lirrel {
         if let Screen::Menu = self.cur_screen {
             return gui::view_menu().into();
         }
-        let cur_stage = self.get_current_stage().unwrap_or(&*BLANK_STAGE);
-        gui::view_main(&self.clock.value, &cur_stage, &self.progress).into()
+        let cur_stage = self.get_current_stage();
+        gui::view_main(&self.clock.remaning, &cur_stage, &self.progress).into()
     }
 
     pub fn update(&mut self, msg: Message) -> Task<Message> {
@@ -129,7 +173,28 @@ impl Lirrel {
                 }
                 _ => return Task::none(),
             },
-            m => println!("{:?}", m),
+            Message::ToggleTimer => {
+                if self.clock.is_running() {
+                    self.clock.pause();
+                    self.confirm_before_closing = false;
+                } else {
+                    self.clock.run();
+                    self.confirm_before_closing = true;
+                }
+            }
+            Message::Tick(now) => {
+                let status = self.clock.update(now);
+                if status == TimerStatus::Completed {
+                    println!("completed");
+                }
+            }
+            Message::Reset => todo!(),
+            Message::Back => todo!(),
+            Message::Skip => todo!(),
+            Message::Zero => todo!(),
+            Message::OpenFile => todo!(),
+            Message::SaveFile => todo!(),
+            Message::SaveFileAs => todo!(),
         };
 
         Task::none()
@@ -149,8 +214,14 @@ impl Lirrel {
         gui::theme()
     }
 
-    pub fn subscription(&self) -> iced::Subscription<Message> {
-        iced::Subscription::batch([window::close_requests().map(|id| Message::CloseRequest(id))])
+    pub fn subscription(&self) -> Subscription<Message> {
+        Subscription::batch([
+            match self.clock.is_running() {
+                true => time::every(Duration::from_millis(10)).map(Message::Tick),
+                false => Subscription::none(),
+            },
+            window::close_requests().map(|id| Message::CloseRequest(id)),
+        ])
     }
 }
 
@@ -169,7 +240,10 @@ impl Lirrel {
         self.progress.reset();
     }
 
-    fn get_current_stage(&self) -> Option<&Stage> {
-        self.config.stages.get(self.progress.current)
+    fn get_current_stage(&self) -> &Stage {
+        self.config
+            .stages
+            .get(self.progress.current)
+            .unwrap_or(&*BLANK_STAGE)
     }
 }
