@@ -14,15 +14,19 @@ use storage::{BLANK_STAGE, Stage, TimerConfig};
 pub enum Message {
     ToMain,
     ToMenu,
-    Back,
+
+    ZeroStage,
+    RegressStage,
+    ProceedStage,
+
+    ResetTimer,
     ToggleTimer,
-    Skip,
-    Zero,
-    Reset,
+    Tick(Instant),
+
     OpenFile,
     SaveFile,
     SaveFileAs,
-    Tick(Instant),
+
     CloseRequest(window::Id),
     CloseRequestResponse(window::Id, MessageDialogResult),
 }
@@ -207,12 +211,12 @@ impl Lirrel {
                     self.clock.run();
                 }
             }
-            Message::Reset => todo!(),
-            Message::Back => self.load_previus_stage(),
-            Message::Skip => {
+            Message::ResetTimer => todo!(),
+            Message::RegressStage => self.load_previus_stage(),
+            Message::ProceedStage => {
                 self.load_next_stage();
             }
-            Message::Zero => todo!(),
+            Message::ZeroStage => todo!(),
             Message::OpenFile => todo!(),
             Message::SaveFile => todo!(),
             Message::SaveFileAs => todo!(),

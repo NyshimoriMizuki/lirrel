@@ -93,21 +93,21 @@ pub(crate) fn view_main<'a>(
     .padding(Padding::from((CHAR_SIZE * 2) as f32));
 
     let primary_controls = row![
-        make_default_button(("⏮", CYAN), "Voltar", Message::Back),
+        make_default_button(("⏮", CYAN), "Voltar", Message::RegressStage),
         UIButton::new(Message::ToggleTimer)
             .glyph("▶", WHITE)
             .text("Play")
             .base(PLAY, PLAY_HOVER, 8.into())
             .create(),
-        make_default_button(("⏭", CYAN), "Pular", Message::Skip),
+        make_default_button(("⏭", CYAN), "Pular", Message::ProceedStage),
     ]
     .spacing(12)
     .width(Length::Fill)
     .height(45);
 
     let secondary_controls = row![
-        make_default_button(("🔁", CYAN), "Zerar", Message::Zero),
-        make_default_button(("❌", RED), "Resetar", Message::Reset),
+        make_default_button(("🔁", CYAN), "Zerar", Message::ZeroStage),
+        make_default_button(("❌", RED), "Resetar", Message::ResetTimer),
     ]
     .spacing(12)
     .width(Length::Fill)
