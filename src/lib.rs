@@ -35,7 +35,7 @@ enum Screen {
 
 #[derive(Debug, PartialEq, Eq)]
 enum TimerStatus {
-    Stopped,
+    // Stopped,
     Completed,
     InProgress,
 }
@@ -70,7 +70,8 @@ impl Clock {
 
     fn update(&mut self, now: Instant) -> TimerStatus {
         let Some(deadline) = self.deadline else {
-            return TimerStatus::Stopped;
+            // return TimerStatus::Stopped;
+            return TimerStatus::Completed;
         };
         self.remaning = deadline.saturating_duration_since(now);
         if self.remaning.is_zero() {
@@ -99,19 +100,25 @@ impl ProgressTracker {
         self.current = 0;
     }
 
-    fn proceed(&mut self) {
-        self.current = if self.current + 1 < self.total {
-            self.current + 1
+    /// it returns `true` if it overflows and reset the counting.
+    fn proceed(&mut self) -> bool {
+        if self.current + 1 < self.total {
+            self.current += 1;
+            false
         } else {
-            0
+            self.current = 0;
+            true
         }
     }
 
-    fn regress(&mut self) {
-        self.current = if self.current == 0 {
-            self.total - 1
+    /// it returns `true` if it overflows and go to the last stage.
+    fn regress(&mut self) -> bool {
+        if self.current == 0 {
+            self.current = self.total - 1;
+            true
         } else {
-            self.current - 1
+            self.current -= 1;
+            false
         }
     }
 
@@ -193,12 +200,19 @@ impl Lirrel {
             Message::Tick(now) => {
                 let status = self.clock.update(now);
                 if status == TimerStatus::Completed {
-                    self.load_next_stage();
+                    let overflowed = self.load_next_stage();
+
+                    if overflowed && !self.config.cycling {
+                        return Task::none();
+                    }
+                    self.clock.run();
                 }
             }
             Message::Reset => todo!(),
             Message::Back => self.load_previus_stage(),
-            Message::Skip => self.load_next_stage(),
+            Message::Skip => {
+                self.load_next_stage();
+            }
             Message::Zero => todo!(),
             Message::OpenFile => todo!(),
             Message::SaveFile => todo!(),
@@ -256,13 +270,15 @@ impl Lirrel {
             .unwrap_or(&*BLANK_STAGE)
     }
 
-    fn load_next_stage(&mut self) {
-        self.progress.proceed();
+    // returns `true` if overflowed
+    fn load_next_stage(&mut self) -> bool {
+        let overflowed = self.progress.proceed();
         self.clock = Clock::new(self.get_current_stage().duration);
+        overflowed
     }
 
     fn load_previus_stage(&mut self) {
-        self.progress.regress();
+        let _ = self.progress.regress();
         self.clock = Clock::new(self.get_current_stage().duration);
     }
 }
